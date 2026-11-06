@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pearson mı, Spearman mı? — code2work DS</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  :root { --green:#71D000; --black:#15191F; --orange:#FF6B35; --blue:#0066C8; --teal:#2C857A; --purple:#B15CFF; --yellow:#F5C518; --code-bg:#1a1e2e; }
+  body { font-family:'Outfit',sans-serif; background:var(--black); color:#fff; overflow:hidden; height:100vh; width:100vw; }
+  .slide { display:none; flex-direction:column; justify-content:center; align-items:center; height:100vh; width:100vw; padding:56px 80px; position:relative; animation:fadeIn .4s ease; }
+  .slide.active { display:flex; }
+  @keyframes fadeIn { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
+  .brand-bar { position:fixed; top:0; left:0; right:0; height:4px; background:linear-gradient(90deg,var(--purple),var(--teal),var(--green)); z-index:100; }
+  .progress-bar { position:fixed; bottom:0; left:0; height:3px; background:var(--purple); transition:width .4s ease; z-index:100; }
+  .slide-counter { position:fixed; bottom:20px; right:40px; font-size:14px; color:rgba(255,255,255,.3); z-index:100; }
+  .logo { position:fixed; top:20px; left:40px; font-size:18px; font-weight:700; color:var(--green); z-index:100; letter-spacing:-.5px; }
+  .logo span { color:rgba(255,255,255,.45); font-weight:400; }
+  .nav-hint { position:fixed; bottom:20px; left:40px; font-size:12px; color:rgba(255,255,255,.2); z-index:100; }
+  h1 { font-size:50px; font-weight:700; line-height:1.12; letter-spacing:-1px; margin-bottom:20px; }
+  h2 { font-size:35px; font-weight:600; line-height:1.2; margin-bottom:16px; letter-spacing:-.5px; }
+  h3 { font-size:21px; font-weight:500; margin-bottom:12px; color:rgba(255,255,255,.9); }
+  p, li { font-size:19px; line-height:1.55; font-weight:300; color:rgba(255,255,255,.85); }
+  ul { list-style:none; } ul li { padding:6px 0; padding-left:26px; position:relative; }
+  ul li::before { content:''; position:absolute; left:0; top:15px; width:9px; height:9px; background:var(--purple); border-radius:50%; }
+  .accent{color:var(--green);} .accent-orange{color:var(--orange);} .accent-blue{color:#5aa9ff;} .accent-purple{color:#c792ea;} .accent-yellow{color:var(--yellow);} .dim{color:rgba(255,255,255,.4);}
+  pre { background:var(--code-bg); border-radius:12px; padding:18px 24px; font-family:'SF Mono','Fira Code',monospace; font-size:17px; line-height:1.6; overflow-x:auto; width:100%; max-width:940px; border:1px solid rgba(177,92,255,.2); margin-top:10px; text-align:left; }
+  code { font-family:'SF Mono','Fira Code',monospace; background:rgba(177,92,255,.16); padding:2px 8px; border-radius:5px; font-size:16px; }
+  .kw{color:#c792ea;} .fn{color:#82aaff;} .str{color:#c3e88d;} .cm{color:#546e7a;} .num{color:#f78c6c;} .out{color:#71D000;}
+  .center-content { display:flex; flex-direction:column; align-items:center; text-align:center; max-width:1000px; }
+  .left-content { display:flex; flex-direction:column; align-items:flex-start; width:100%; max-width:1000px; }
+  .card { background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.08); border-radius:16px; padding:20px; }
+  .section-tag { display:inline-block; background:rgba(177,92,255,.18); color:#c792ea; font-size:14px; font-weight:600; padding:6px 16px; border-radius:20px; margin-bottom:16px; text-transform:uppercase; letter-spacing:1px; }
+  .subtitle { font-size:22px; color:rgba(255,255,255,.5); font-weight:300; margin-top:8px; }
+  .highlight-box { background:linear-gradient(135deg,rgba(177,92,255,.12),rgba(44,133,122,.08)); border-left:4px solid #c792ea; border-radius:0 12px 12px 0; padding:14px 22px; margin:12px 0; width:100%; max-width:920px; text-align:left; }
+  .highlight-box p { font-size:18px; color:rgba(255,255,255,.9); }
+  .grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:18px; width:100%; max-width:1000px; margin-top:12px; }
+  .title-slide { background:radial-gradient(ellipse at 30% 50%,rgba(177,92,255,.1) 0%,transparent 60%),radial-gradient(ellipse at 70% 80%,rgba(113,208,0,.06) 0%,transparent 50%); }
+  .section-slide { background:radial-gradient(ellipse at 50% 50%,rgba(177,92,255,.07) 0%,transparent 60%); }
+  table.cmp { border-collapse:collapse; margin-top:12px; width:100%; max-width:900px; background:var(--code-bg); border-radius:12px; overflow:hidden; }
+  table.cmp td, table.cmp th { padding:10px 16px; font-size:16px; text-align:left; border-bottom:1px solid rgba(255,255,255,.06); }
+  table.cmp th { color:#c792ea; font-weight:600; font-size:14px; text-transform:uppercase; letter-spacing:.5px; }
+  table.cmp .mono { font-family:'SF Mono',monospace; color:#cfe; }
+  .charts { display:grid; grid-template-columns:repeat(3,1fr); gap:18px; width:100%; max-width:1040px; margin-top:14px; }
+  .chart { background:var(--code-bg); border:1px solid rgba(255,255,255,.08); border-radius:14px; padding:12px 12px 14px; text-align:center; }
+  .chart svg { width:100%; height:auto; }
+  .chart h3 { font-size:17px; margin:2px 0 4px; }
+  .chart .res { font-family:'SF Mono',monospace; font-size:15px; color:rgba(255,255,255,.75); margin-top:4px; }
+  .q { color:var(--yellow); font-weight:600; }
+  .scale { display:flex; width:100%; max-width:880px; height:44px; border-radius:10px; overflow:hidden; margin:18px 0 6px; }
+  .scale div { flex:1; display:flex; align-items:center; justify-content:center; font-size:15px; font-weight:600; }
+  .scale-labels { display:flex; justify-content:space-between; width:100%; max-width:880px; font-family:'SF Mono',monospace; color:rgba(255,255,255,.6); font-size:15px; }
+  .duo { display:grid; grid-template-columns:1fr 1fr; gap:22px; width:100%; max-width:1040px; align-items:center; }
+  .duo svg { width:100%; height:auto; background:var(--code-bg); border-radius:14px; border:1px solid rgba(255,255,255,.08); }
+  .big-q { font-size:30px; font-weight:600; line-height:1.3; margin:6px 0 14px; }
+  .rank-table { border-collapse:collapse; margin-top:10px; font-family:'SF Mono',monospace; font-size:15px; }
+  .rank-table td { padding:6px 10px; border:1px solid rgba(255,255,255,.08); text-align:center; }
+  .rank-table td:first-child { color:#c792ea; text-align:left; font-family:'Outfit',sans-serif; }
+</style>
+</head>
+<body>
+<div class="brand-bar"></div>
+<div class="logo">code2work <span>| DS Live</span></div>
+<div class="progress-bar" id="progress"></div>
+<div class="slide-counter" id="counter"></div>
+<div class="nav-hint">&#8592; &#8594; ile gezin</div>
+
+<!-- 1 -->
+<div class="slide title-slide active">
+  <div class="center-content">
+    <div class="section-tag">Canlı Ders · Modül 7</div>
+    <h1>Pearson mı, Spearman mı?</h1>
+    <p class="subtitle">İki korelasyon, iki farklı soru</p>
+  </div>
+</div>
+
+<!-- 2 hatırlatma -->
+<div class="slide">
+  <div class="left-content">
+    <div class="section-tag">Hatırlatma</div>
+    <h2>Korelasyon: iki şey birlikte mi hareket ediyor?</h2>
+    <div class="scale">
+      <div style="background:rgba(255,107,53,.55)">güçlü ters yön</div>
+      <div style="background:rgba(255,255,255,.08)">ilişki yok</div>
+      <div style="background:rgba(113,208,0,.5); color:#0d0f13">güçlü aynı yön</div>
+    </div>
+    <div class="scale-labels"><span>−1</span><span>0</span><span>+1</span></div>
+    <pre><span class="kw">x_seri</span>.<span class="fn">corr</span>(y_seri, method=<span class="str">'pearson'</span>)    <span class="cm"># derste böyle hesapladık</span>
+<span class="kw">x_seri</span>.<span class="fn">corr</span>(y_seri, method=<span class="str">'spearman'</span>)   <span class="cm"># ...ama bir de bu vardı</span></pre>
+    <div class="highlight-box"><p>Derste ikisinin de <strong>adını</strong> duyduk. Peki farkları ne, hangisini ne zaman seçeriz?</p></div>
+  </div>
+</div>
+
+<!-- 3 neden iki tane -->
+<div class="slide section-slide">
+  <div class="center-content">
+    <div class="section-tag">Bilmece</div>
+    <h2>Dersteki veride ikisi de ≈ 1 çıktı</h2>
+    <pre style="max-width:620px;"><span class="cm"># x = [10, 20, 30, 40, 50]   y = [12, 24, 33, 48, 55]</span>
+Pearson : <span class="out">0.995</span>
+Spearman: <span class="out">1.0</span></pre>
+    <p class="big-q" style="margin-top:22px;">Aynı sonucu veriyorlarsa <span class="q">neden iki ayrı yöntem var?</span></p>
+    <p class="dim">Çünkü bu veri çok "uslu": noktalar dümdüz bir çizgi üstünde. Fark, veri yaramazlık yapınca ortaya çıkıyor.</p>
+  </div>
+</div>
+
+<!-- 4 pearson -->
+<div class="slide">
+  <div class="duo">
+    <div>
+      <div class="section-tag">Pearson</div>
+      <h2>Cetvel tutar 📏</h2>
+      <p class="big-q">"Noktalar <span class="accent-yellow">düz bir çizgiye</span> ne kadar yakın?"</p>
+      <ul>
+        <li>Sayıların <strong>kendisine</strong> bakar: 48 mi, 250 mi, fark eder</li>
+        <li>Düz (doğrusal) ilişkiyi ölçer</li>
+        <li><code>corr()</code>'un varsayılanı</li>
+      </ul>
+    </div>
+    <svg viewBox="0 0 300 200" width="300" height="200" role="img"><line x1="22" y1="178" x2="289.0" y2="178" stroke="rgba(255,255,255,.25)"/><line x1="22" y1="11.0" x2="22" y2="178" stroke="rgba(255,255,255,.25)"/><line x1="22.0" y1="178.0" x2="278.0" y2="22.0" stroke="#F5C518" stroke-width="2.5" stroke-dasharray="7 5"/><circle cx="22.0" cy="178.0" r="6.5" fill="#c792ea"/><circle cx="50.4" cy="157.7" r="6.5" fill="#c792ea"/><circle cx="78.9" cy="144.1" r="6.5" fill="#c792ea"/><circle cx="107.3" cy="123.7" r="6.5" fill="#c792ea"/><circle cx="135.8" cy="110.2" r="6.5" fill="#c792ea"/><circle cx="164.2" cy="89.8" r="6.5" fill="#c792ea"/><circle cx="192.7" cy="76.3" r="6.5" fill="#c792ea"/><circle cx="221.1" cy="55.9" r="6.5" fill="#c792ea"/><circle cx="249.6" cy="42.3" r="6.5" fill="#c792ea"/><circle cx="278.0" cy="22.0" r="6.5" fill="#c792ea"/></svg>
+  </div>
+</div>
+
+<!-- 5 spearman -->
+<div class="slide">
+  <div class="duo">
+    <div>
+      <div class="section-tag">Spearman</div>
+      <h2>Sadece sıraya bakar 🏁</h2>
+      <p class="big-q">"Biri artınca öteki de <span class="accent">artıyor mu?</span>"</p>
+      <ul>
+        <li>Sayıları <strong>sıra numarasına</strong> çevirir: 1., 2., 3. ...</li>
+        <li><strong>Ne kadar</strong> arttığı önemli değil, <strong>aynı yöne</strong> gidiyor mu?</li>
+        <li>Yarış gibi: kaç saniyede bitirdiğin değil, <strong>kaçıncı</strong> geldiğin</li>
+      </ul>
+    </div>
+    <svg viewBox="0 0 300 200" width="300" height="200" role="img"><line x1="22" y1="178" x2="289.0" y2="178" stroke="rgba(255,255,255,.25)"/><line x1="22" y1="11.0" x2="22" y2="178" stroke="rgba(255,255,255,.25)"/><circle cx="22.0" cy="178.0" r="6.5" fill="#5aa9ff"/><text x="22.0" y="167.0" fill="#71D000" font-size="12" text-anchor="middle" font-weight="600">1.</text><circle cx="50.4" cy="176.2" r="6.5" fill="#5aa9ff"/><text x="50.4" y="165.2" fill="#71D000" font-size="12" text-anchor="middle" font-weight="600">2.</text><circle cx="78.9" cy="174.5" r="6.5" fill="#5aa9ff"/><text x="78.9" y="163.5" fill="#71D000" font-size="12" text-anchor="middle" font-weight="600">3.</text><circle cx="107.3" cy="170.9" r="6.5" fill="#5aa9ff"/><text x="107.3" y="159.9" fill="#71D000" font-size="12" text-anchor="middle" font-weight="600">4.</text><circle cx="135.8" cy="165.6" r="6.5" fill="#5aa9ff"/><text x="135.8" y="154.6" fill="#71D000" font-size="12" text-anchor="middle" font-weight="600">5.</text><circle cx="164.2" cy="156.7" r="6.5" fill="#5aa9ff"/><text x="164.2" y="145.7" fill="#71D000" font-size="12" text-anchor="middle" font-weight="600">6.</text><circle cx="192.7" cy="142.5" r="6.5" fill="#5aa9ff"/><text x="192.7" y="131.5" fill="#71D000" font-size="12" text-anchor="middle" font-weight="600">7.</text><circle cx="221.1" cy="119.5" r="6.5" fill="#5aa9ff"/><text x="221.1" y="108.5" fill="#71D000" font-size="12" text-anchor="middle" font-weight="600">8.</text><circle cx="249.6" cy="82.3" r="6.5" fill="#5aa9ff"/><text x="249.6" y="71.3" fill="#71D000" font-size="12" text-anchor="middle" font-weight="600">9.</text><circle cx="278.0" cy="22.0" r="6.5" fill="#5aa9ff"/><text x="278.0" y="11.0" fill="#71D000" font-size="12" text-anchor="middle" font-weight="600">10.</text></svg>
+  </div>
+</div>
+
+<!-- 6 sıra örneği -->
+<div class="slide">
+  <div class="left-content">
+    <div class="section-tag">Spearman'ın sırrı</div>
+    <h2>Sıraya çevirince büyüklük kaybolur</h2>
+    <table class="rank-table">
+      <tr><td>maaş</td><td>25</td><td style="color:#FF6B35;font-weight:700">250</td><td>30</td><td>33</td><td>35</td><td>38</td><td>40</td><td>43</td><td>45</td><td>48</td></tr>
+      <tr><td>sırası</td><td>1</td><td style="color:#FF6B35;font-weight:700">10</td><td>2</td><td>3</td><td>4</td><td>5</td><td>6</td><td>7</td><td>8</td><td>9</td></tr>
+    </table>
+    <div class="highlight-box" style="margin-top:22px;"><p>250 de yazsan 2500 de yazsan Spearman için sadece <strong>"en büyük olan, 10."</strong> Pearson ise o sayının ne kadar büyük olduğunu hesaba katar.</p></div>
+  </div>
+</div>
+
+<!-- 7 üç durum tahmin -->
+<div class="slide">
+  <div class="center-content" style="max-width:1080px;">
+    <div class="section-tag">Tahmin edin</div>
+    <h2>Hangisinde ikisi ayrışır?</h2>
+    <div class="charts">
+      <div class="chart"><h3>Düz ilişki</h3><svg viewBox="0 0 300 200" width="300" height="200" role="img"><line x1="22" y1="178" x2="289.0" y2="178" stroke="rgba(255,255,255,.25)"/><line x1="22" y1="11.0" x2="22" y2="178" stroke="rgba(255,255,255,.25)"/><circle cx="22.0" cy="178.0" r="6.5" fill="#c792ea"/><circle cx="50.4" cy="157.7" r="6.5" fill="#c792ea"/><circle cx="78.9" cy="144.1" r="6.5" fill="#c792ea"/><circle cx="107.3" cy="123.7" r="6.5" fill="#c792ea"/><circle cx="135.8" cy="110.2" r="6.5" fill="#c792ea"/><circle cx="164.2" cy="89.8" r="6.5" fill="#c792ea"/><circle cx="192.7" cy="76.3" r="6.5" fill="#c792ea"/><circle cx="221.1" cy="55.9" r="6.5" fill="#c792ea"/><circle cx="249.6" cy="42.3" r="6.5" fill="#c792ea"/><circle cx="278.0" cy="22.0" r="6.5" fill="#c792ea"/></svg><div class="res">P ≈ 1 · S ≈ 1</div></div>
+      <div class="chart"><h3>Hep artıyor ama eğri</h3><svg viewBox="0 0 300 200" width="300" height="200" role="img"><line x1="22" y1="178" x2="289.0" y2="178" stroke="rgba(255,255,255,.25)"/><line x1="22" y1="11.0" x2="22" y2="178" stroke="rgba(255,255,255,.25)"/><circle cx="22.0" cy="178.0" r="6.5" fill="#c792ea"/><circle cx="50.4" cy="177.7" r="6.5" fill="#c792ea"/><circle cx="78.9" cy="177.1" r="6.5" fill="#c792ea"/><circle cx="107.3" cy="175.9" r="6.5" fill="#c792ea"/><circle cx="135.8" cy="173.4" r="6.5" fill="#c792ea"/><circle cx="164.2" cy="168.5" r="6.5" fill="#c792ea"/><circle cx="192.7" cy="158.8" r="6.5" fill="#c792ea"/><circle cx="221.1" cy="139.2" r="6.5" fill="#c792ea"/><circle cx="249.6" cy="100.2" r="6.5" fill="#c792ea"/><circle cx="278.0" cy="22.0" r="6.5" fill="#c792ea"/></svg><div class="res">P <span class="q">?</span> · S <span class="q">?</span></div></div>
+      <div class="chart"><h3>Tek hatalı kayıt</h3><svg viewBox="0 0 300 200" width="300" height="200" role="img"><line x1="22" y1="178" x2="289.0" y2="178" stroke="rgba(255,255,255,.25)"/><line x1="22" y1="11.0" x2="22" y2="178" stroke="rgba(255,255,255,.25)"/><circle cx="22.0" cy="178.0" r="6.5" fill="#c792ea"/><circle cx="50.4" cy="22.0" r="6.5" fill="#FF6B35"/><circle cx="78.9" cy="174.5" r="6.5" fill="#c792ea"/><circle cx="107.3" cy="172.5" r="6.5" fill="#c792ea"/><circle cx="135.8" cy="171.1" r="6.5" fill="#c792ea"/><circle cx="164.2" cy="169.0" r="6.5" fill="#c792ea"/><circle cx="192.7" cy="167.6" r="6.5" fill="#c792ea"/><circle cx="221.1" cy="165.5" r="6.5" fill="#c792ea"/><circle cx="249.6" cy="164.1" r="6.5" fill="#c792ea"/><circle cx="278.0" cy="162.1" r="6.5" fill="#c792ea"/></svg><div class="res">P <span class="q">?</span> · S <span class="q">?</span></div></div>
+    </div>
+    <p class="dim" style="margin-top:16px;">Cevaplar notebook'ta 👉</p>
+  </div>
+</div>
+
+<!-- 8 karar -->
+<div class="slide">
+  <div class="left-content">
+    <div class="section-tag">Karar</div>
+    <h2>Hangisini seçeyim?</h2>
+    <table class="cmp">
+      <tr><th>Durum</th><th>Seç</th></tr>
+      <tr><td>Noktalar düz çizgi gibi, aykırı değer yok</td><td><strong class="accent-yellow">Pearson</strong></td></tr>
+      <tr><td>Hep artıyor / azalıyor ama <strong>eğri</strong></td><td><strong class="accent">Spearman</strong></td></tr>
+      <tr><td><strong>Aykırı değer</strong> var</td><td><strong class="accent">Spearman</strong></td></tr>
+      <tr><td><strong>Sıralı</strong> veri (anket 1-5, yarış sırası, eğitim seviyesi)</td><td><strong class="accent">Spearman</strong></td></tr>
+    </table>
+    <div class="highlight-box" style="margin-top:18px;"><p>💡 İkisini de hesapla. <strong>Yakınsa</strong> rahat ol, <strong>çok farklıysa</strong> grafiğe bak.</p></div>
+  </div>
+</div>
+
+<!-- 9 tek cümle -->
+<div class="slide title-slide">
+  <div class="center-content">
+    <p class="big-q" style="font-size:38px;">Pearson <span class="accent-yellow">"düz çizgi mi?"</span> diye sorar,<br>Spearman <span class="accent">"aynı yöne mi gidiyor?"</span> diye.</p>
+    <p class="subtitle" style="margin-top:30px;">Şimdi notebook'ta görelim → <code>pearson_spearman.ipynb</code></p>
+  </div>
+</div>
+
+<script>
+  const slides=document.querySelectorAll('.slide'); let current=0;
+  function showSlide(n){ slides[current].classList.remove('active'); current=Math.max(0,Math.min(n,slides.length-1)); slides[current].classList.add('active');
+    document.getElementById('progress').style.width=((current)/(slides.length-1))*100+'%'; document.getElementById('counter').textContent=(current+1)+' / '+slides.length; }
+  document.addEventListener('keydown',(e)=>{ if(e.key==='ArrowRight'||e.key==='ArrowDown'||e.key===' '){e.preventDefault();showSlide(current+1);} else if(e.key==='ArrowLeft'||e.key==='ArrowUp'){e.preventDefault();showSlide(current-1);} else if(e.key==='Home')showSlide(0); else if(e.key==='End')showSlide(slides.length-1); });
+  let tsx=0; document.addEventListener('touchstart',(e)=>{tsx=e.touches[0].clientX;}); document.addEventListener('touchend',(e)=>{const d=tsx-e.changedTouches[0].clientX; if(Math.abs(d)>50){d>0?showSlide(current+1):showSlide(current-1);}});
+  showSlide(0);
+</script>
+</body>
+</html>

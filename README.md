@@ -9,6 +9,7 @@ Her ders için ayrı bir klasör vardır; ders adı + tarih içerir.
 |-------|------|--------|
 | 14 Mayıs 2026 | Subquery, WITH, VIEW + Python f-string | [`subquery-with-fstring/`](./subquery-with-fstring/) |
 | 4 Haziran 2026 | Matplotlib ve Seaborn ile Görselleştirme | [`matplotlib-seaborn/`](./matplotlib-seaborn/) |
+| 5 Kasım 2026 | Pearson mı, Spearman mı? (korelasyon) | [`pearson-spearman/`](./pearson-spearman/) |
 
 ---
 
